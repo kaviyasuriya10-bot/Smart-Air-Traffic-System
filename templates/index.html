@@ -1,1 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Air Traffic Control System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>✈ Smart Air Traffic Control System</h1>
+        <p>Educational Air Traffic Control Simulation</p>
+    </header>
 
+    <main>
+        <section class="card">
+            <h2>Aircraft Processing</h2>
+
+            <form id="aircraftForm">
+                <input name="aircraft_name" placeholder="Aircraft Name" required>
+                <input name="flight_number" placeholder="Flight Number" required>
+                <input name="destination" placeholder="Destination" required>
+
+                <input name="fuel_level" type="number" step="0.1"
+                       placeholder="Fuel Level" required>
+                <input name="engine_temp" type="number" step="0.1"
+                       placeholder="Engine Temperature" required>
+                <input name="wind_speed" type="number" step="0.1"
+                       placeholder="Wind Speed" required>
+                <input name="visibility" type="number" step="0.1"
+                       placeholder="Visibility" required>
+
+                <button type="submit">Process Aircraft</button>
+            </form>
+
+            <pre id="result">Enter aircraft details and process the flight.</pre>
+        </section>
+
+        <section class="card">
+            <h2>Radar Positions</h2>
+            <button id="radarButton">Refresh Radar</button>
+            <pre id="radar">Loading...</pre>
+        </section>
+
+        <section class="card">
+            <h2>Flight History</h2>
+            <button id="historyButton">Load History</button>
+            <pre id="history">No records loaded.</pre>
+        </section>
+    </main>
+
+    <footer>
+        <p>Class XII Computer Science Project | Educational Simulation</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
