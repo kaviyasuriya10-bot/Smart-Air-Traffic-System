@@ -1,6 +1,6 @@
 # ✈️ Smart Air Traffic Control System
 
-A Class XII Computer Science project that demonstrates a software-based Smart Air Traffic Control (ATC) simulation using Python, Flask, MySQL, HTML, CSS and JavaScript.
+This project demonstrates a software-based Smart Air Traffic Control (ATC) simulation using Python, Flask, MySQL, HTML, CSS and JavaScript.
 
 > **Educational use only:** This project is a simulation and is not intended to replace certified real-world Air Traffic Control systems.
 
@@ -58,36 +58,8 @@ Smart-Air-Traffic-Control-System/
 
 ## How the System Works
 
-```text
-START
-  ↓
-Run Flask Application
-  ↓
-Open Web Browser
-  ↓
-Load Web Interface
-  ↓
-User Enters Aircraft Data
-  ↓
-POST /api/process
-  ↓
-Check Required Fields
-  ↓
-Validate Numerical Data
-  ↓
-ATC Processing
-  ├── Weather Analysis
-  ├── Collision Detection
-  ├── Volcanic Ash Detection
-  ├── Emergency Detection
-  └── Runway Assignment
-  ↓
-Save Processed Flight to MySQL
-  ↓
-Return JSON Report
-  ↓
-Display Result
-```
+<img width="1023" height="1537" alt="1faf13a5-90ba-42aa-b43c-56306d59cfeb" src="https://github.com/user-attachments/assets/6f4d6cb1-92d2-4db3-a641-3a398a6751e8" />
+
 
 ## API Endpoints
 
@@ -242,12 +214,38 @@ Possible extensions include:
 - Real-time aircraft data
 - More detailed airport information
 
-## Project Information
+## ATC is divided into three main categories;
 
-**Project:** Smart Air Traffic Control System  
-**Subject:** Computer Science  
-**Class:** XII – CBSE  
-**Academic Year:** 2026–2027
+<img width="589" height="224" alt="image" src="https://github.com/user-attachments/assets/8fac4b37-5a4e-47d4-9938-acab0c85f120" />
+
+## How ATC tracks and guide the aircraft
+## Radar Tracking and Communication Flow
+
+<img width="599" height="371" alt="image" src="https://github.com/user-attachments/assets/627dfd4b-a289-4223-ba3b-0bbeeb595942" />
+
+## Flight Phases and Corresponding ATC Units
+
+<img width="697" height="637" alt="image" src="https://github.com/user-attachments/assets/2bcd6e81-241c-4a71-b861-ec3cde3df75f" />
+
+## Aircraft Separation Standards
+
+<img width="620" height="388" alt="image" src="https://github.com/user-attachments/assets/69151b6a-f6d9-4c50-87ef-f4a5f493fb7c" />
+
+## Weather, Emergencies, and Automation
+
+ATC also provides weather updates, reroutes aircraft during storms or turbulence, and coordinates emergency landings.
+Modern ATC is evolving toward automation through:
+
+Digital flight strips
+Satellite navigation (GNSS)
+AI-assisted traffic prediction
+## Future of Air Traffic Control
+
+The next generation system, NextGen (U.S.) and SESAR (Europe), aims for:
+
+Satellite-based tracking
+Real-time data exchange between aircraft and ATC
+Reduced delays and fuel use
 
 ## Disclaimer
 
