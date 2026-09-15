@@ -2,13 +2,6 @@
 
 <div align="center">
 
-![ATC Banner](https://img.shields.io/badge/AI%20Smart-ATC%20System-orange?style=for-the-badge&logo=airplane&logoColor=white)
-![HTML](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
-![CSS](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-![Ollama](https://img.shields.io/badge/Ollama-llama3.2:3b-blueviolet?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
-
 **A fully browser-based, AI-powered Air Traffic Control system with live radar, collision detection, emergency management, and Ollama LLM integration — no backend, no database, just one HTML file.**
 
 [Features](#-features) · [Demo](#-demo) · [Installation](#-installation) · [How It Works](#-how-it-works) · [Screenshots](#-screenshots) · [Tech Stack](#-tech-stack) · [Project Structure](#-project-structure) · [Contributing](#-contributing)
@@ -17,7 +10,7 @@
 
 ---
 
-## 📌 Overview
+##  Overview
 
 The **AI Smart Air Traffic Control System** is a complete, single-file web application that simulates a real ATC (Air Traffic Control) environment. It combines classic ATC logic — weather analysis, radar tracking, collision detection, and runway allocation — with a local **Ollama llama3.2:3b** AI model that generates professional aviation-style decisions for every flight processed.
 
@@ -25,44 +18,44 @@ Built entirely with **HTML, CSS, and JavaScript** — no Python, no MySQL, no se
 
 ---
 
-## ✨ Features
+##  Features
 
 | Feature | Description |
 |---|---|
-| 📡 **Live Radar** | Animated phosphor-green sweep with 6 tracked aircraft, drift simulation, and ash zone overlays |
-| 🌩️ **Weather Analysis** | Checks wind speed and visibility to classify weather as Safe or Dangerous |
-| 💥 **Collision Detection** | Calculates real-time distance between your aircraft and all radar traffic |
-| 🌋 **Volcanic Ash Detection** | Proximity check against multiple defined ash danger zones |
-| 🚨 **Emergency Detection** | Identifies Low Fuel, Engine Overheat, and Volcanic Ash emergencies |
-| 🛬 **Smart Runway Allocation** | Auto-assigns Runway 1 (emergency), 2 (normal), or 3 (strong wind) |
-| 🤖 **Ollama AI Decision** | llama3.2:3b generates a professional 4–6 sentence ATC advisory per flight |
-| 🔊 **Voice Announcements** | Web Speech API reads the full ATC report aloud after each analysis |
-| 🗂️ **Session History** | Every processed flight is logged in an in-session table |
-| 📊 **Live KPI Bar** | Real-time counters for total flights, safe flights, and emergencies |
-| 🎲 **Random Generator** | Instantly load a random aircraft for quick testing |
+|  **Live Radar** | Animated phosphor-green sweep with 6 tracked aircraft, drift simulation, and ash zone overlays |
+|  **Weather Analysis** | Checks wind speed and visibility to classify weather as Safe or Dangerous |
+|  **Collision Detection** | Calculates real-time distance between your aircraft and all radar traffic |
+|  **Volcanic Ash Detection** | Proximity check against multiple defined ash danger zones |
+|  **Emergency Detection** | Identifies Low Fuel, Engine Overheat, and Volcanic Ash emergencies |
+|  **Smart Runway Allocation** | Auto-assigns Runway 1 (emergency), 2 (normal), or 3 (strong wind) |
+|  **Ollama AI Decision** | llama3.2:3b generates a professional 4–6 sentence ATC advisory per flight |
+|  **Voice Announcements** | Web Speech API reads the full ATC report aloud after each analysis |
+|  **Session History** | Every processed flight is logged in an in-session table |
+|  **Live KPI Bar** | Real-time counters for total flights, safe flights, and emergencies |
+|  **Random Generator** | Instantly load a random aircraft for quick testing |
 
 ---
 
-## 🎬 Demo
+##  Demo
 
 > Open `atc_system.html` directly in your browser. No installation needed beyond Ollama.
 
 ```
-✈  Flight AI203  →  Mumbai
-📡 Position:  (247, 318)
-🌩  Weather:   Safe
-💥 Collision:  Safe — IND450 at 87.3 units
-🌋 Ash:        Clear
-🚨 Emergency:  NONE
-🛬 Runway:     2  (Regular Operation)
-🤖 AI:         "Flight AI203, radar contact. Weather conditions are within normal
+  Flight AI203  →  Mumbai
+ Position:  (247, 318)
+  Weather:   Safe
+ Collision:  Safe — IND450 at 87.3 units
+ Ash:        Clear
+ Emergency:  NONE
+ Runway:     2  (Regular Operation)
+ AI:         "Flight AI203, radar contact. Weather conditions are within normal
                 parameters. Maintain current altitude and heading. Cleared to land
                 Runway Two..."
 ```
 
 ---
 
-## 🛠️ Installation
+##  Installation
 
 ### Prerequisites
 
@@ -95,7 +88,7 @@ This downloads the ~2 GB llama3.2:3b model locally. Only needs to be done once.
 ollama serve
 ```
 
-> ⚠️ **CORS fix for browser requests:** Run Ollama with origins enabled:
+>  **CORS fix for browser requests:** Run Ollama with origins enabled:
 > ```bash
 > OLLAMA_ORIGINS="*" ollama serve
 > ```
@@ -245,10 +238,10 @@ Two active ash zones are defined in the radar grid (0–450 unit coordinate spac
 ┌──────────────────────────────────────────────────────────────────────────┐
 │  ✈ AI Smart ATC    [0 Processed] [0 Safe] [0 Emg]    llama3.2:3b  Online│
 ├────────────────┬──────────────────────────────────────┬──────────────────┤
-│ Aircraft Data  │  📡 Radar  │ 📊 Analysis │ 🗂 History │  Live Alert Log  │
+│ Aircraft Data  │   Radar  │  Analysis │  History │  Live Alert Log  │
 │                │                                      │                  │
-│ Aircraft Name  │    [  Animated Radar Canvas  ]       │ ✅ System online  │
-│ Flight Number  │    [  Sweep + Traffic Blips  ]       │ ℹ️  Awaiting data │
+│ Aircraft Name  │    [  Animated Radar Canvas  ]       │ System online  │
+│ Flight Number  │    [  Sweep + Traffic Blips  ]       │   Awaiting data │
 │ Destination    │    [  Ash Zones + Your AC    ]       │                  │
 │                │                                      │                  │
 │ Fuel ──●── 72% │                                      │                  │
@@ -256,15 +249,15 @@ Two active ash zones are defined in the radar grid (0–450 unit coordinate spac
 │ Wind ──●── 30  │                                      │                  │
 │ Vis  ──●──1200 │                                      │                  │
 │                │                                      │                  │
-│ [⚡ Analyse  ] │                                      │                  │
-│ [🎲 Random  ] │                                      │                  │
-│ [🤖 Ollama  ] │                                      │                  │
+│ [ Analyse  ] │                                      │                  │
+│ [ Random  ] │                                      │                  │
+│ [ Ollama  ] │                                      │                  │
 └────────────────┴──────────────────────────────────────┴──────────────────┘
 ```
 
 ---
 
-## 🧰 Tech Stack
+##  Tech Stack
 
 | Technology | Purpose |
 |---|---|
@@ -282,7 +275,7 @@ This project is intentionally zero-dependency. No React, no Vue, no build step. 
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 ai-smart-atc/
@@ -305,7 +298,7 @@ Everything — HTML structure, CSS styling, JavaScript logic, radar canvas, Olla
    - **Engine Temp** — set high (> 90°C) to trigger overheat
    - **Wind Speed** — set above 50 to trigger dangerous weather + Runway 3
    - **Visibility** — set below 500m to trigger dangerous weather
-3. Click **⚡ Run ATC Analysis**
+3. Click ** Run ATC Analysis**
 4. Watch the radar dot appear, results populate, and hear the voice readout
 5. Switch to the **Analysis** tab to see the full report including the Ollama AI decision
 6. Switch to the **History** tab to review all processed flights
@@ -324,11 +317,11 @@ Everything — HTML structure, CSS styling, JavaScript logic, radar canvas, Olla
 
 ### Quick Test with Random Aircraft
 
-Click **🎲 Random Aircraft** to auto-fill all fields with randomised values. Good for stress-testing the AI decision logic.
+Click ** Random Aircraft** to auto-fill all fields with randomised values. Good for stress-testing the AI decision logic.
 
 ---
 
-## ⚙️ Configuration
+##  Configuration
 
 All configuration is at the top of the `<script>` section in `atc_system.html`:
 
@@ -371,19 +364,19 @@ ollama pull phi3            # Microsoft Phi-3
 
 ---
 
-## 🛡️ ATC Logic Reference
+##  ATC Logic Reference
 
 ### Complete Decision Table
 
 | Condition | Value | Result |
 |---|---|---|
-| Fuel Level | < 20% | 🚨 LOW FUEL emergency + Runway 1 |
-| Engine Temp | > 90°C | 🚨 ENGINE OVERHEAT + Runway 1 |
-| Wind Speed | > 50 km/h | ⚠️ Dangerous weather + Runway 3 |
-| Visibility | < 500 m | ⚠️ Dangerous weather |
-| Traffic Distance | < 50 units | 💥 COLLISION RISK |
-| Ash Zone | Within radius | 🌋 VOLCANIC ASH + Runway 1 |
-| All clear | — | ✅ Runway 2, normal operation |
+| Fuel Level | < 20% |  LOW FUEL emergency + Runway 1 |
+| Engine Temp | > 90°C |  ENGINE OVERHEAT + Runway 1 |
+| Wind Speed | > 50 km/h |  Dangerous weather + Runway 3 |
+| Visibility | < 500 m |  Dangerous weather |
+| Traffic Distance | < 50 units |  COLLISION RISK |
+| Ash Zone | Within radius |  VOLCANIC ASH + Runway 1 |
+| All clear | — |  Runway 2, normal operation |
 
 ### Runway Priority Order
 ```
@@ -394,7 +387,7 @@ Runway 2  ←  Default          (all clear)
 
 ---
 
-## 🤖 AI Prompt Design
+##  AI Prompt Design
 
 The system sends this structured prompt to Ollama for every flight:
 
@@ -419,7 +412,7 @@ Give your ATC decision, risk level, and immediate pilot instructions.
 
 ---
 
-## 🌐 Browser Compatibility
+##  Browser Compatibility
 
 | Browser | Radar | Ollama AI | Voice |
 |---|---|---|---|
@@ -431,7 +424,7 @@ Give your ATC decision, risk level, and immediate pilot instructions.
 
 ---
 
-## ❓ Troubleshooting
+## Troubleshooting
 
 ### Ollama AI shows "Offline"
 
@@ -470,7 +463,7 @@ llama3.2:3b requires ~4 GB RAM. If it's slow, ensure no other heavy applications
 
 ---
 
-## 📚 Real-Life Applications
+##  Real-Life Applications
 
 This project demonstrates concepts used in:
 
@@ -482,7 +475,7 @@ This project demonstrates concepts used in:
 
 ---
 
-## 🔮 Future Improvements
+## Future Improvements
 
 - [ ] Multi-aircraft simultaneous processing queue
 - [ ] Real weather API integration (OpenWeatherMap)
@@ -494,30 +487,6 @@ This project demonstrates concepts used in:
 - [ ] Audio alerts with distinct tones per emergency type
 - [ ] Replay mode for past flights
 - [ ] Multiple runways with visual diagram
-
----
-
-## 📄 License
-
-```
-MIT License
-
-Copyright (c) 2025
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-```
 
 ---
 
