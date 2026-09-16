@@ -124,12 +124,6 @@ Strong wind          -> Runway 3
 Normal operation     -> Runway 2
 This is only a demonstration of conditional programming.
 
-Browser Storage
-Because MySQL has been removed, flight history is stored in:
-
-localStorage
-The history remains available in the same browser until the user clears browser storage or presses Clear History.
-
 Ollama
 Ollama is optional.
 
@@ -144,13 +138,6 @@ llama3.2:3b
 To use it, install Ollama separately and make sure the model is available.
 
 The browser may block direct requests to Ollama depending on its CORS configuration. If that happens, the normal browser ATC analysis still works.
-
-Why Python and MySQL Were Removed
-The original project used Flask/Python for the backend and MySQL for database storage.
-
-This version moves the main processing into JavaScript and uses localStorage for history.
-
-This makes the project easier to run for a school demonstration because it can be opened directly in a browser without installing Python, Flask, MySQL or a database server.
 
 Limitations
 This is an educational simulation.
