@@ -1,5 +1,0 @@
-Flask
-mysql-connector-python
-pyttsx3
-SpeechRecognition
-gunicorn
