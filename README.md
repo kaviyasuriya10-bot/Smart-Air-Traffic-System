@@ -13,13 +13,20 @@ There is no Python and no MySQL in this version.
 
 ## Project Structure
 ATC Web/
+
 │
 ├── index.html
+
 ├── css/
+
 │   └── style.css
+
 ├── js/
+
 │   └── script.js
+
 └── README.md
+
 ## Features
 Aircraft data entry
 Text input
