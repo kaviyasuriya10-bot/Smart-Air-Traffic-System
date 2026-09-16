@@ -1,7 +1,7 @@
-AI Smart Air Traffic Control - Web Version
+## AI Smart Air Traffic Control - Web Version
 This version of the project uses only browser technologies for the main ATC system.
 
-Technologies
+## Technologies
 HTML
 CSS
 JavaScript
@@ -20,7 +20,7 @@ ATC_Web_No_Python_MySQL/
 ├── js/
 │   └── script.js
 └── README.md
-Features
+## Features
 Aircraft data entry
 Text input
 Voice input
@@ -37,13 +37,9 @@ Live alert log
 Random aircraft generator
 Text command system
 Optional Ollama AI assessment
-How to Run
+
+## How to Run
 No Python installation is required.
-
-Simple method
-Open index.html in Google Chrome or Microsoft Edge.
-
-For voice input, allow microphone permission when the browser asks.
 
 Recommended method
 Use VS Code with the Live Server extension.
@@ -58,10 +54,7 @@ Press the Start Voice Input button or use:
 Alt + V
 If an input field is focused, speech is placed into that field.
 
-If no field is focused, you can speak a complete sentence such as:
-
-aircraft Boeing 737, flight AI203, destination Mumbai, fuel 65, engine temperature 78, wind speed 25, visibility 3000
-You can also speak commands such as:
+## commands:
 
 collision detection
 runway allocation
@@ -97,6 +90,7 @@ Collision Detection
 The project uses the Euclidean distance formula:
 
 distance = sqrt((x2 - x1)^2 + (y2 - y1)^2)
+
 A collision risk is generated when the nearest simulated aircraft is less than 50 radar units away.
 
 This is an educational simulation and does not represent real aviation separation standards.
