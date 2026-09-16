@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Smart Air Traffic Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">ATC</div>
+    <div>
+      <h1>AI SMART AIR TRAFFIC CONTROL</h1>
+      <p>Web-based traffic monitoring and runway advisory</p>
+    </div>
+  </div>
+
+  <div class="top-status">
+    <div class="status-box">
+      <span class="status-dot" id="systemDot"></span>
+      <span id="systemStatus">System Online</span>
+    </div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<main class="dashboard">
+
+  <section class="panel radar-panel">
+    <div class="panel-title">
+      <div>
+        <h2>Radar Scope</h2>
+        <p>Simulated traffic and hazard zones</p>
+      </div>
+      <span class="small-status" id="radarStatus">4 contacts</span>
+    </div>
+
+    <div class="radar-holder">
+      <canvas id="radarCanvas" width="520" height="520"></canvas>
+    </div>
+
+    <div class="legend">
+      <span><i class="legend-dot traffic"></i>Traffic</span>
+      <span><i class="legend-dot subject"></i>Subject</span>
+      <span><i class="legend-dot ash"></i>Ash zone</span>
+    </div>
+  </section>
+
+  <section class="panel intake-panel">
+    <div class="panel-title">
+      <div>
+        <h2>Aircraft Intake</h2>
+        <p>Enter data manually or use voice input</p>
+      </div>
+      <span class="small-status" id="voiceStatus">Voice ready</span>
+    </div>
+
+    <form id="intakeForm">
+      <label class="field">
+        <span>Aircraft type</span>
+        <input type="text" name="aircraft_name" placeholder="Boeing 737" required>
+      </label>
+
+      <label class="field">
+        <span>Flight number</span>
+        <input type="text" name="flight_number" placeholder="AI203" required>
+      </label>
+
+      <label class="field">
+        <span>Destination</span>
+        <input type="text" name="destination" placeholder="Mumbai" required>
+      </label>
+
+      <div class="field-row">
+        <label class="field">
+          <span>Fuel level <em>%</em></span>
+          <input type="number" name="fuel_level" min="0" max="100" step="0.1" placeholder="65" required>
+        </label>
+
+        <label class="field">
+          <span>Engine temperature <em>°C</em></span>
+          <input type="number" name="engine_temp" step="0.1" placeholder="78" required>
+        </label>
+      </div>
+
+      <div class="field-row">
+        <label class="field">
+          <span>Wind speed <em>km/h</em></span>
+          <input type="number" name="wind_speed" min="0" step="0.1" placeholder="25" required>
+        </label>
+
+        <label class="field">
+          <span>Visibility <em>m</em></span>
+          <input type="number" name="visibility" min="0" step="1" placeholder="3000" required>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button class="btn primary" type="submit" id="analyseBtn">Run ATC Analysis</button>
+        <button class="btn secondary" type="button" id="randomBtn">Random Aircraft</button>
+      </div>
+
+      <div class="voice-controls">
+        <button class="btn voice" type="button" id="voiceBtn">Start Voice Input</button>
+        <span>Shortcut: Alt + V</span>
+      </div>
+
+      <p class="message" id="formMessage"></p>
+    </form>
+
+    <div class="command-box">
+      <label for="commandInput">Text command</label>
+      <div class="command-row">
+        <input id="commandInput" type="text"
+               placeholder="Example: collision detection">
+        <button class="btn secondary" id="commandBtn" type="button">Run Command</button>
+      </div>
+      <p class="command-help">
+        Try: collision detection, runway allocation, weather analysis,
+        emergency check, volcanic ash, or system status.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel report-panel" id="reportPanel" hidden>
+    <div class="panel-title">
+      <div>
+        <h2>ATC Analysis Report</h2>
+        <p id="reportTime"></p>
+      </div>
+      <span class="small-status">Latest result</span>
+    </div>
+
+    <div class="report-grid" id="reportGrid"></div>
+
+    <div class="ai-section">
+      <div class="ai-heading">
+        <h3>AI ATC Assessment</h3>
+        <span id="aiStatus">Local rule-based assessment</span>
+      </div>
+      <div class="ai-output" id="aiOutput">
+        Run an analysis to generate the assessment.
+      </div>
+      <div class="ai-actions">
+        <button class="btn secondary" id="ollamaBtn" type="button">Check Ollama</button>
+        <button class="btn secondary" id="speakBtn" type="button">Read Result Aloud</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel log-panel">
+    <div class="panel-title">
+      <div>
+        <h2>Flight History</h2>
+        <p>Stored in the browser using localStorage</p>
+      </div>
+      <div class="log-actions">
+        <span class="small-status" id="historyCount">0 records</span>
+        <button class="btn secondary small" id="clearHistoryBtn" type="button">Clear History</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Flight</th>
+            <th>Aircraft</th>
+            <th>Destination</th>
+            <th>Weather</th>
+            <th>Collision</th>
+            <th>Emergency</th>
+            <th>Runway</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr>
+            <td colspan="8" class="empty">No flights processed yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel alerts-panel">
+    <div class="panel-title">
+      <div>
+        <h2>Live Alert Log</h2>
+        <p>Recent system messages</p>
+      </div>
+      <button class="btn secondary small" id="clearAlertsBtn" type="button">Clear Alerts</button>
+    </div>
+
+    <div class="alerts" id="alerts">
+      <div class="alert info">
+        <span class="alert-time">--:--:--</span>
+        <span>System started. Waiting for aircraft data.</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Educational simulation only. This project is not a certified aviation control system.
+</footer>
+
+<script src="js/script.js"></script>
+</body>
+</html>
