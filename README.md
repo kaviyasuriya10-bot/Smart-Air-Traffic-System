@@ -11,8 +11,8 @@ Browser localStorage
 Optional Ollama for AI assessment
 There is no Python and no MySQL in this version.
 
-Project Structure
-ATC_Web_No_Python_MySQL/
+## Project Structure
+ATC Web/
 │
 ├── index.html
 ├── css/
