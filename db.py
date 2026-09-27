@@ -1,16 +1,16 @@
 """
-Database helper for the AI Smart Air Traffic Control System.
+Database helper for the Smart Air Traffic Control System.
 Handles connecting to MySQL, creating the schema, and saving/reading flights.
 """
 
 import mysql.connector
 from mysql.connector import Error
 
-# ── Update these to match your MySQL setup ──────────────────────────────
+
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": "ejen sparky",   # ← change this
+    "password": "Your MYSQL Password",  
     "database": "atc_system",
 }
 
@@ -18,7 +18,7 @@ DB_CONFIG = {
 def get_connection():
     """Create (and if needed initialize) the database, then return a connection."""
     try:
-        # Connect without a database first, so we can create it if missing
+        
         cfg_no_db = {k: v for k, v in DB_CONFIG.items() if k != "database"}
         tmp = mysql.connector.connect(**cfg_no_db)
         cur = tmp.cursor()
