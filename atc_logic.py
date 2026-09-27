@@ -6,7 +6,7 @@ Pure functions — no I/O — so they're easy to test and reuse from the web lay
 import math
 import random
 
-# ── Simulated radar: nearby aircraft with (x, y) positions ──────────────
+
 RADAR_AIRCRAFT = {
     "AI101":  (120, 340),
     "IND450": (200, 180),
@@ -14,7 +14,7 @@ RADAR_AIRCRAFT = {
     "USA220": (80,  270),
 }
 
-COLLISION_THRESHOLD = 50  # units
+COLLISION_THRESHOLD = 50 
 
 ASH_ZONES = [
     {"center": (300, 300), "radius": 80},
@@ -88,7 +88,7 @@ def process_aircraft(ac: dict) -> dict:
     fuel_level, engine_temp, wind_speed, visibility.
     Position is assigned here, same as radar assignment for a new arrival.
     """
-    ac = dict(ac)  # don't mutate caller's dict
+    ac = dict(ac) 
     ac["pos_x"] = round(random.uniform(50, 400), 2)
     ac["pos_y"] = round(random.uniform(50, 450), 2)
 
