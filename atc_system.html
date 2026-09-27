@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AI Smart Air Traffic Control</title>
+<style>
+/* ═══════════════════════════════════════════════════════
+   DESIGN TOKENS
+   Palette: deep navy cockpit + amber instruments + 
+            radar phosphor green. Avoids default neon-
+            green-on-black; uses amber as the primary 
+            instrument colour (like real ATC scopes).
+═══════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* backgrounds */
+  --ink:    #05080f;
+  --deep:   #080d18;
+  --panel:  #0c1423;
+  --card:   #111e30;
+  --lift:   #162437;
+  /* accents */
+  --amber:  #f0a500;
+  --amber2: #c47f00;
+  --jade:   #00d48a;   /* radar phosphor */
+  --sky:    #3a9bdc;
+  --danger: #e83b5a;
+  --warn:   #f5a623;
+  --ok:     #00c97a;
+  /* text */
+  --hi:     #ddeeff;
+  --mid:    #7fa0bc;
+  --lo:     #344d66;
+  /* borders */
+  --rule:   #1a2e45;
+  /* fonts */
+  --ui:     'Inter', system-ui, sans-serif;
+  --data:   'Share Tech Mono', monospace;
+}
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  background: var(--ink);
+  color: var(--hi);
+  font-family: var(--ui);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* scanline texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px, transparent 2px,
+    rgba(0,0,0,.07) 2px, rgba(0,0,0,.07) 4px
+  );
+}
+
+/* scrollbars */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--lo); border-radius: 2px; }
+
+/* ═══════════════════════════════════════════════════════
+   TOPBAR
+═══════════════════════════════════════════════════════ */
+#bar {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 50px; padding: 0 22px;
+  background: var(--deep);
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+
+.logo { display: flex; align-items: center; gap: 11px; }
+.logo-badge {
+  width: 34px; height: 34px; border-radius: 7px;
+  background: linear-gradient(135deg, var(--amber), #e06000);
+  display: grid; place-items: center;
+  font-size: 17px;
+}
+.logo-title { font-size: 14px; font-weight: 700; color: var(--amber); letter-spacing: .03em; }
+.logo-sub   { font-size: 9px; color: var(--mid); letter-spacing: .06em; margin-top: 1px; }
+
+.bar-center {
+  display: flex; gap: 28px;
+}
+.kpi {
+  text-align: center;
+}
+.kpi-val { font-family: var(--data); font-size: 16px; font-weight: 700; color: var(--amber); }
+.kpi-lbl { font-size: 9px; color: var(--mid); margin-top: 1px; letter-spacing: .04em; }
+
+.bar-right { display: flex; align-items: center; gap: 14px; }
+
+.pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 12px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  font-family: var(--data); font-size: 10px;
+}
+.pill.ai { border-color: rgba(240,165,0,.3); color: var(--amber); }
+
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--lo);
+}
+.dot.on     { background: var(--ok);     box-shadow: 0 0 6px var(--ok);     animation: blink 2s infinite; }
+.dot.active { background: var(--amber);  box-shadow: 0 0 6px var(--amber);  animation: blink 1.4s infinite; }
+.dot.err    { background: var(--danger); }
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+#clock { font-family: var(--data); font-size: 15px; color: var(--amber); letter-spacing: .1em; }
+
+/* ═══════════════════════════════════════════════════════
+   3-COLUMN GRID
+═══════════════════════════════════════════════════════ */
+#grid {
+  display: grid;
+  grid-template-columns: 300px 1fr 270px;
+  flex: 1; min-height: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PANEL SHELL
+═══════════════════════════════════════════════════════ */
+.col {
+  border-right: 1px solid var(--rule);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.col:last-child { border-right: none; border-left: 1px solid var(--rule); }
+
+.col-head {
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--rule);
+  font-size: 9px; font-weight: 700; letter-spacing: .16em;
+  color: var(--mid); text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.col-body {
+  flex: 1; overflow-y: auto; padding: 14px 16px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   FORM ELEMENTS
+═══════════════════════════════════════════════════════ */
+.fgroup { margin-bottom: 11px; }
+.fgroup label {
+  display: block; font-size: 10px; font-weight: 600;
+  color: var(--mid); margin-bottom: 4px;
+}
+.fgroup input[type="text"] {
+  width: 100%;
+  background: var(--lift);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 7px 10px;
+  color: var(--hi);
+  font-family: var(--data); font-size: 12px;
+  outline: none;
+  transition: border-color .15s;
+}
+.fgroup input[type="text"]:focus { border-color: var(--amber); }
+
+.frow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* range sliders */
+.srow { display: flex; align-items: center; gap: 8px; }
+.srow input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 3px; border-radius: 3px;
+  background: var(--lo); border: none; outline: none; padding: 0;
+}
+.srow input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--amber); cursor: pointer;
+  box-shadow: 0 0 5px rgba(240,165,0,.4);
+}
+.sval { font-family: var(--data); font-size: 11px; color: var(--amber); min-width: 54px; text-align: right; }
+
+hr.sep { border: none; border-top: 1px solid var(--rule); margin: 13px 0; }
+
+/* buttons */
+.btn {
+  width: 100%; padding: 9px 14px;
+  border: none; border-radius: 6px;
+  font-family: var(--ui); font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: opacity .15s, transform .12s;
+}
+.btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; }
+.btn-go {
+  background: linear-gradient(135deg, var(--amber), #c96000);
+  color: #000; margin-bottom: 7px;
+}
+.btn-go:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
+.btn-line {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--mid); margin-bottom: 6px; font-size: 11px;
+}
+.btn-line:hover { border-color: var(--amber); color: var(--amber); }
+
+/* ═══════════════════════════════════════════════════════
+   TABS (centre column)
+═══════════════════════════════════════════════════════ */
+#centre { border-right: 1px solid var(--rule); }
+
+.tabs {
+  display: flex; gap: 3px; padding: 7px 14px;
+  background: var(--panel); border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+.tab {
+  padding: 5px 13px; border: none; border-radius: 5px;
+  background: transparent; color: var(--mid);
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  transition: background .14s, color .14s;
+}
+.tab.on {
+  background: var(--card); color: var(--amber);
+  border: 1px solid var(--rule);
+}
+.tab:hover:not(.on) { color: var(--hi); }
+
+.pane { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.pane.on { display: flex; }
+
+/* ── RADAR PANE ─────────────────────────────────────── */
+#pane-radar { padding: 12px; gap: 10px; }
+
+#radarBox {
+  flex: 1; min-height: 0;
+  background: #020a03;
+  border: 1px solid #0c2e0c;
+  border-radius: 10px;
+  overflow: hidden; position: relative;
+}
+canvas { display: block; width: 100%; height: 100%; }
+
+.legend {
+  display: flex; flex-wrap: wrap; gap: 14px;
+  flex-shrink: 0; padding: 2px 0;
+}
+.li { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--mid); font-family: var(--data); }
+.lb { width: 9px; height: 9px; border-radius: 50%; }
+
+/* ── ANALYSIS PANE ──────────────────────────────────── */
+#pane-analysis { overflow-y: auto; padding: 16px; }
+
+/* ── HISTORY PANE ───────────────────────────────────── */
+#pane-history { overflow-y: auto; padding: 14px; }
+
+/* ═══════════════════════════════════════════════════════
+   RESULT WIDGETS
+═══════════════════════════════════════════════════════ */
+.sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 12px; }
+
+.scard {
+  background: var(--card); border: 1px solid var(--rule); border-radius: 7px;
+  padding: 11px 12px;
+}
+.sc-lbl { font-size: 9px; color: var(--mid); margin-bottom: 5px; letter-spacing: .08em; }
+.sc-val { font-family: var(--data); font-size: 20px; font-weight: 700; }
+.sc-sub { font-size: 10px; color: var(--mid); margin-top: 3px; }
+
+.s-ok   .sc-val { color: var(--ok); }
+.s-warn .sc-val { color: var(--warn); }
+.s-bad  .sc-val { color: var(--danger); }
+.s-sky  .sc-val { color: var(--sky); }
+
+/* runway */
+.rwy {
+  display: flex; align-items: center; gap: 13px;
+  background: var(--card); border: 1px solid var(--rule);
+  border-radius: 8px; padding: 13px; margin-bottom: 12px;
+}
+.rwy-n {
+  width: 52px; height: 52px; flex-shrink: 0; border-radius: 8px;
+  background: linear-gradient(135deg, var(--amber), #c96000);
+  display: grid; place-items: center;
+  font-family: var(--data); font-size: 28px; font-weight: 900; color: #000;
+}
+.rwy-lbl { font-size: 9px; color: var(--mid); letter-spacing: .1em; }
+.rwy-rsn { font-size: 13px; font-weight: 600; margin-top: 4px; }
+
+/* badges */
+.badges { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+.badge {
+  padding: 2px 9px; border-radius: 12px;
+  font-size: 10px; font-weight: 700; font-family: var(--data);
+}
+.b-ok   { background: rgba(0,201,122,.12); color: var(--ok);     border: 1px solid rgba(0,201,122,.3); }
+.b-bad  { background: rgba(232,59,90,.12);  color: var(--danger); border: 1px solid rgba(232,59,90,.3); }
+.b-warn { background: rgba(245,166,35,.12); color: var(--warn);   border: 1px solid rgba(245,166,35,.3); }
+.b-sky  { background: rgba(58,155,220,.12); color: var(--sky);    border: 1px solid rgba(58,155,220,.3); }
+
+/* AI box */
+.ai-box {
+  background: linear-gradient(135deg,rgba(240,165,0,.06),rgba(58,155,220,.04));
+  border: 1px solid rgba(240,165,0,.22);
+  border-radius: 8px; padding: 13px; margin-bottom: 11px;
+}
+.ai-head {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 10px; font-weight: 700; color: var(--amber);
+  letter-spacing: .1em; margin-bottom: 10px;
+}
+.ai-body { font-size: 12px; line-height: 1.75; color: var(--hi); }
+.ai-body.loading::after {
+  content: '█'; color: var(--amber); animation: blink .65s infinite;
+}
+
+/* history table */
+.htab { width: 100%; border-collapse: collapse; font-family: var(--data); font-size: 10px; }
+.htab th {
+  color: var(--mid); text-align: left; padding: 5px 8px;
+  border-bottom: 1px solid var(--rule); font-size: 9px; letter-spacing: .08em;
+  white-space: nowrap;
+}
+.htab td { padding: 6px 8px; border-bottom: 1px solid rgba(26,46,69,.5); }
+.htab tr:hover td { background: rgba(255,255,255,.02); }
+
+/* placeholder */
+.mute {
+  color: var(--lo); font-size: 12px; text-align: center;
+  padding: 36px 0; font-style: italic;
+}
+
+/* spinner */
+.spin {
+  display: inline-block; width: 13px; height: 13px;
+  border: 2px solid rgba(240,165,0,.25); border-top-color: var(--amber);
+  border-radius: 50%; animation: rot .65s linear infinite; vertical-align: middle;
+}
+@keyframes rot { to { transform: rotate(360deg); } }
+
+/* toast */
+#toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--card); border: 1px solid var(--amber);
+  color: var(--amber); font-family: var(--data); font-size: 12px;
+  padding: 9px 22px; border-radius: 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s;
+  z-index: 9998;
+}
+#toast.show { opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════
+   ALERT LOG (right col)
+═══════════════════════════════════════════════════════ */
+#feed { display: flex; flex-direction: column; gap: 6px; }
+
+.log {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: var(--card);
+  border-left: 3px solid var(--lo);
+  border-radius: 5px; padding: 7px 10px;
+  font-family: var(--data); font-size: 11px;
+  animation: swipe .22s ease;
+}
+@keyframes swipe { from{opacity:0;transform:translateX(9px)} to{opacity:1;transform:none} }
+.log.l-ok   { border-color: var(--ok); }
+.log.l-warn { border-color: var(--warn); }
+.log.l-bad  { border-color: var(--danger); }
+.log.l-sky  { border-color: var(--sky); }
+.log-ico { flex-shrink: 0; }
+.log-txt { color: var(--hi); line-height: 1.4; }
+.log-ts  { color: var(--lo); font-size: 9px; margin-top: 2px; }
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     TOP BAR
+══════════════════════════════════════════════════════ -->
+<div id="bar">
+  <div class="logo">
+    <div class="logo-badge">✈</div>
+    <div>
+      <div class="logo-title">AI Smart ATC</div>
+      <div class="logo-sub">Air Traffic Control System</div>
+    </div>
+  </div>
+
+  <div class="bar-center">
+    <div class="kpi"><div class="kpi-val" id="kpi-processed">0</div><div class="kpi-lbl">Processed</div></div>
+    <div class="kpi"><div class="kpi-val" id="kpi-safe">0</div><div class="kpi-lbl">Safe</div></div>
+    <div class="kpi"><div class="kpi-val" id="kpi-emg" style="color:var(--danger)">0</div><div class="kpi-lbl">Emergencies</div></div>
+  </div>
+
+  <div class="bar-right">
+    <div class="pill ai">
+      <div class="dot" id="aiDot"></div>
+      <span id="aiLabel">llama3.2:3b</span>
+    </div>
+    <div class="pill">
+      <div class="dot on"></div>
+      <span>System Online</span>
+    </div>
+    <div id="clock">--:--:--</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     3-COLUMN GRID
+══════════════════════════════════════════════════════ -->
+<div id="grid">
+
+  <!-- ━━ LEFT: INPUT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <div class="col">
+    <div class="col-head">Aircraft Data Entry</div>
+    <div class="col-body">
+
+      <div class="fgroup">
+        <label>Aircraft Name</label>
+        <input id="f_name" type="text" value="Boeing 737" placeholder="e.g. Boeing 737"/>
+      </div>
+
+      <div class="frow">
+        <div class="fgroup">
+          <label>Flight Number</label>
+          <input id="f_fnum" type="text" value="AI203" placeholder="AI203"/>
+        </div>
+        <div class="fgroup">
+          <label>Destination</label>
+          <input id="f_dest" type="text" value="Mumbai" placeholder="Mumbai"/>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label>Fuel Level — <b id="lv_fuel" style="color:var(--amber)">72%</b></label>
+        <div class="srow">
+          <input id="sl_fuel" type="range" min="0" max="100" value="72"/>
+          <span class="sval" id="sv_fuel">72%</span>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label>Engine Temp — <b id="lv_temp" style="color:var(--amber)">65°C</b></label>
+        <div class="srow">
+          <input id="sl_temp" type="range" min="0" max="150" value="65"/>
+          <span class="sval" id="sv_temp">65°C</span>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label>Wind Speed — <b id="lv_wind" style="color:var(--amber)">30 km/h</b></label>
+        <div class="srow">
+          <input id="sl_wind" type="range" min="0" max="130" value="30"/>
+          <span class="sval" id="sv_wind">30 km/h</span>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label>Visibility — <b id="lv_vis" style="color:var(--amber)">1200 m</b></label>
+        <div class="srow">
+          <input id="sl_vis" type="range" min="0" max="3000" step="50" value="1200"/>
+          <span class="sval" id="sv_vis">1200 m</span>
+        </div>
+      </div>
+
+      <hr class="sep"/>
+
+      <button class="btn btn-go" id="btnProcess" onclick="processAircraft()">
+        ⚡  Run ATC Analysis
+      </button>
+      <button class="btn btn-line" onclick="genRandom()">
+        🎲  Random Aircraft
+      </button>
+      <button class="btn btn-line" onclick="checkOllama()">
+        🤖  Check Ollama
+      </button>
+      <button class="btn btn-line" onclick="clearHistory()">
+        🗑  Clear History
+      </button>
+
+      <hr class="sep"/>
+
+      <!-- mini quick-ref -->
+      <div style="font-size:10px;color:var(--lo);line-height:1.8;font-family:var(--data);">
+        <div>Fuel &lt; 20%  →  LOW FUEL emg.</div>
+        <div>Temp &gt; 90°C →  OVERHEAT emg.</div>
+        <div>Wind &gt; 50   →  Runway 3</div>
+        <div>Vis  &lt; 500m →  Dangerous wx</div>
+        <div>Dist &lt; 50u  →  Collision risk</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ━━ CENTRE: RADAR / ANALYSIS / HISTORY ━━━━━━━━━━━ -->
+  <div class="col" id="centre" style="border-right:none;">
+
+    <!-- tabs -->
+    <div class="tabs">
+      <button class="tab on"  data-t="radar"    onclick="go('radar')">📡 Radar</button>
+      <button class="tab"     data-t="analysis" onclick="go('analysis')">📊 Analysis</button>
+      <button class="tab"     data-t="history"  onclick="go('history')">🗂 History</button>
+    </div>
+
+    <!-- RADAR -->
+    <div id="pane-radar" class="pane on">
+      <div id="radarBox"><canvas id="cv"></canvas></div>
+      <div class="legend">
+        <div class="li"><div class="lb" style="background:var(--jade);box-shadow:0 0 5px var(--jade)"></div>Traffic</div>
+        <div class="li"><div class="lb" style="background:var(--sky)"></div>Your aircraft</div>
+        <div class="li"><div class="lb" style="background:var(--danger);border-radius:2px;width:14px;height:8px"></div>Ash zone</div>
+        <div class="li"><div class="lb" style="background:rgba(58,155,220,.22);border-radius:2px;width:18px;height:8px"></div>50 unit radius</div>
+      </div>
+    </div>
+
+    <!-- ANALYSIS -->
+    <div id="pane-analysis" class="pane">
+      <div id="analysisArea" class="mute">Run an analysis to see results here.</div>
+    </div>
+
+    <!-- HISTORY -->
+    <div id="pane-history" class="pane">
+      <div id="historyArea" class="mute">No flights processed yet.</div>
+    </div>
+
+  </div>
+
+  <!-- ━━ RIGHT: ALERT LOG ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <div class="col">
+    <div class="col-head">Live Alert Log</div>
+    <div class="col-body">
+      <div id="feed"></div>
+    </div>
+  </div>
+
+</div><!-- /grid -->
+
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════ -->
+<script>
+/* ─────────────────────────────────────────────────────
+   CONSTANTS & STATE
+───────────────────────────────────────────────────── */
+const OLLAMA_URL   = 'http://localhost:11434/api/generate';
+const OLLAMA_MODEL = 'llama3.2:3b';
+
+const RADAR_TRAFFIC = {
+  'AI101' : {x:120,y:340}, 'IND450': {x:200,y:180},
+  'QTR778': {x:310,y:410}, 'USA220': {x:80, y:270},
+  'ETH330': {x:370,y:130}, 'SIA991': {x:260,y:90},
+};
+const ASH_ZONES = [
+  {cx:300,cy:300,r:80}, {cx:150,cy:450,r:60},
+];
+
+let flightLog    = [];   // session history (array)
+let currentAC    = null; // last processed aircraft position
+let sweepA       = 0;    // radar sweep angle
+let kpiTotal=0, kpiSafe=0, kpiEmg=0;
+
+/* ─────────────────────────────────────────────────────
+   CLOCK
+───────────────────────────────────────────────────── */
+function tick(){
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('en-GB',{hour12:false});
+}
+setInterval(tick,1000); tick();
+
+/* ─────────────────────────────────────────────────────
+   SLIDER BINDING
+───────────────────────────────────────────────────── */
+const SLIDERS = [
+  {id:'fuel', unit:'%',    suffix:''},
+  {id:'temp', unit:'°C',   suffix:''},
+  {id:'wind', unit:' km/h',suffix:''},
+  {id:'vis',  unit:' m',   suffix:''},
+];
+SLIDERS.forEach(s=>{
+  const el  = document.getElementById('sl_'+s.id);
+  const lv  = document.getElementById('lv_'+s.id);
+  const sv  = document.getElementById('sv_'+s.id);
+  el.addEventListener('input',()=>{
+    lv.textContent = el.value + s.unit;
+    sv.textContent = el.value + s.unit;
+  });
+});
+
+/* ─────────────────────────────────────────────────────
+   TAB SWITCHING
+───────────────────────────────────────────────────── */
+function go(name){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on', b.dataset.t===name));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on', p.id==='pane-'+name));
+}
+
+/* ─────────────────────────────────────────────────────
+   ALERT LOG
+───────────────────────────────────────────────────── */
+const ICO = {ok:'✅',warn:'⚠️',bad:'🚨',sky:'ℹ️'};
+function log(msg, lvl='sky'){
+  const feed = document.getElementById('feed');
+  const ts   = new Date().toLocaleTimeString('en-GB',{hour12:false});
+  const el   = document.createElement('div');
+  el.className = `log l-${lvl}`;
+  el.innerHTML =
+    `<span class="log-ico">${ICO[lvl]||'•'}</span>
+     <div><div class="log-txt">${msg}</div><div class="log-ts">${ts}</div></div>`;
+  feed.prepend(el);
+  while(feed.children.length > 70) feed.removeChild(feed.lastChild);
+}
+log('ATC system online','ok');
+log('Awaiting aircraft data','sky');
+
+/* ─────────────────────────────────────────────────────
+   TOAST
+───────────────────────────────────────────────────── */
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+/* ─────────────────────────────────────────────────────
+   KPI UPDATE
+───────────────────────────────────────────────────── */
+function updateKPIs(){
+  document.getElementById('kpi-processed').textContent = kpiTotal;
+  document.getElementById('kpi-safe').textContent      = kpiSafe;
+  document.getElementById('kpi-emg').textContent       = kpiEmg;
+}
+
+/* ─────────────────────────────────────────────────────
+   RANDOM AIRCRAFT GENERATOR
+───────────────────────────────────────────────────── */
+const AIRCRAFT_NAMES = ['Boeing 737','Airbus A320','Airbus A380','Boeing 777',
+                        'Embraer 190','Bombardier CRJ','Boeing 787','Airbus A350'];
+const DESTINATIONS   = ['Delhi','Kolkata','Chennai','Bangalore','Hyderabad',
+                        'Dubai','Singapore','London','Frankfurt','Tokyo'];
+const PREFIXES       = ['AI','6E','SG','QTR','ETH','SIA','EK','LH'];
+
+function rnd(a,b){ return Math.round(Math.random()*(b-a)+a); }
+
+function genRandom(){
+  document.getElementById('f_name').value =
+    AIRCRAFT_NAMES[rnd(0,AIRCRAFT_NAMES.length-1)];
+  const pre = PREFIXES[rnd(0,PREFIXES.length-1)];
+  document.getElementById('f_fnum').value = pre + rnd(100,999);
+  document.getElementById('f_dest').value =
+    DESTINATIONS[rnd(0,DESTINATIONS.length-1)];
+
+  const vals = {fuel: rnd(5,100), temp: rnd(40,130),
+                wind: rnd(0,100), vis:  rnd(100,3000)};
+  Object.entries(vals).forEach(([k,v])=>{
+    const sl = document.getElementById('sl_'+k);
+    sl.value = v;
+    sl.dispatchEvent(new Event('input'));
+  });
+  toast('Random aircraft loaded');
+}
+
+/* ─────────────────────────────────────────────────────
+   ATC LOGIC (pure JS)
+───────────────────────────────────────────────────── */
+function dist(x1,y1,x2,y2){ return Math.sqrt((x2-x1)**2+(y2-y1)**2); }
+
+function analyseWeather(wind, vis){
+  if(wind > 50 || vis < 500) return {status:'Dangerous', danger:true};
+  return {status:'Safe', danger:false};
+}
+
+function checkCollision(px, py){
+  let near=null, best=Infinity;
+  Object.entries(RADAR_TRAFFIC).forEach(([n,p])=>{
+    const d = dist(px,py,p.x,p.y);
+    if(d < best){ best=d; near=n; }
+  });
+  return {
+    nearest: near,
+    distance: Math.round(best*10)/10,
+    status: best < 50 ? 'RISK' : 'Safe',
+  };
+}
+
+function checkAsh(px, py){
+  return ASH_ZONES.some(z => dist(px,py,z.cx,z.cy) < z.r);
+}
+
+function detectEmergencies(fuel, temp, ash){
+  const out = [];
+  if(fuel < 20) out.push('LOW FUEL');
+  if(temp > 90) out.push('ENGINE OVERHEAT');
+  if(ash)       out.push('VOLCANIC ASH');
+  return out;
+}
+
+function allocateRunway(emgs, wind){
+  if(emgs.length)  return {num:1, reason:'Emergency Priority Landing'};
+  if(wind > 50)    return {num:3, reason:'Strong Wind Conditions'};
+  return             {num:2, reason:'Regular Operation'};
+}
+
+/* ─────────────────────────────────────────────────────
+   OLLAMA INTEGRATION
+───────────────────────────────────────────────────── */
+async function askOllama(prompt){
+  try{
+    const res = await fetch(OLLAMA_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:  OLLAMA_MODEL,
+        prompt: prompt,
+        stream: false,
+      }),
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const j = await res.json();
+    return j.response ? j.response.trim() : '[No response from Ollama]';
+  } catch(e){
+    if(e.message.includes('Failed to fetch') || e.message.includes('ERR_CONNECTION_REFUSED')){
+      return '⚠️ Ollama is not running.\n\nTo fix:\n1. Open a terminal\n2. Run: ollama serve\n3. In another terminal: ollama pull llama3.2:3b\n4. Try again.';
+    }
+    return `⚠️ Ollama error: ${e.message}`;
+  }
+}
+
+function buildPrompt(ac, wx, col, ash, emgs, rwy){
+  return `You are an expert Air Traffic Controller AI. Analyse this aircraft data and give a professional 4-6 sentence safety assessment with clear advisories. Use aviation-style language.
+
+AIRCRAFT: ${ac.name}  |  FLIGHT: ${ac.fnum}  →  ${ac.dest}
+Fuel: ${ac.fuel}%  |  Engine Temp: ${ac.temp}°C  |  Wind: ${ac.wind} km/h  |  Visibility: ${ac.vis}m
+Radar Position: (${ac.px}, ${ac.py})
+
+ATC RESULTS:
+- Weather: ${wx.status}
+- Nearest traffic: ${col.nearest} at ${col.distance} units  →  ${col.status}
+- Volcanic ash: ${ash ? 'DETECTED IN PATH' : 'Clear'}
+- Emergencies: ${emgs.length ? emgs.join(', ') : 'None'}
+- Runway assigned: Runway ${rwy.num}  (${rwy.reason})
+
+Give your ATC decision, risk level, and immediate pilot instructions.`;
+}
+
+async function checkOllama(){
+  document.getElementById('aiDot').className = 'dot active';
+  document.getElementById('aiLabel').textContent = 'Checking…';
+  try{
+    const res = await fetch('http://localhost:11434/api/tags',{method:'GET'});
+    const j   = await res.json();
+    const models = (j.models||[]).map(m=>m.name);
+    const ready  = models.some(m=>m.includes('llama3.2'));
+    if(ready){
+      document.getElementById('aiDot').className  = 'dot on';
+      document.getElementById('aiLabel').textContent = 'llama3.2:3b ✓';
+      log('Ollama llama3.2:3b ready','ok');
+      toast('Ollama is ready ✓');
+    } else {
+      document.getElementById('aiDot').className  = 'dot active';
+      document.getElementById('aiLabel').textContent = 'Model missing';
+      log(`Ollama running – models: ${models.join(', ')||'none'}. Run: ollama pull llama3.2:3b`,'warn');
+      toast('Pull model: ollama pull llama3.2:3b');
+    }
+  }catch(e){
+    document.getElementById('aiDot').className  = 'dot err';
+    document.getElementById('aiLabel').textContent = 'Offline';
+    log('Ollama not running – run: ollama serve','bad');
+    toast('Ollama offline – run: ollama serve');
+  }
+}
+checkOllama();
+setInterval(checkOllama, 30000);
+
+/* ─────────────────────────────────────────────────────
+   MAIN: PROCESS AIRCRAFT
+───────────────────────────────────────────────────── */
+async function processAircraft(){
+  const btn = document.getElementById('btnProcess');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>  Processing…';
+  go('analysis');
+
+  // collect input
+  const ac = {
+    name: document.getElementById('f_name').value.trim() || 'Unknown',
+    fnum: document.getElementById('f_fnum').value.trim() || 'XX000',
+    dest: document.getElementById('f_dest').value.trim() || 'Unknown',
+    fuel: Number(document.getElementById('sl_fuel').value),
+    temp: Number(document.getElementById('sl_temp').value),
+    wind: Number(document.getElementById('sl_wind').value),
+    vis:  Number(document.getElementById('sl_vis').value),
+    px:   Math.round(Math.random()*380 + 30),
+    py:   Math.round(Math.random()*380 + 30),
+  };
+
+  log(`Incoming: ${ac.fnum} → ${ac.dest}`, 'sky');
+
+  // show skeleton
+  document.getElementById('analysisArea').innerHTML =
+    `<div class="mute"><span class="spin"></span>  Running ATC checks…</div>`;
+
+  // ATC logic
+  const wx   = analyseWeather(ac.wind, ac.vis);
+  const col  = checkCollision(ac.px, ac.py);
+  const ash  = checkAsh(ac.px, ac.py);
+  const emgs = detectEmergencies(ac.fuel, ac.temp, ash);
+  const rwy  = allocateRunway(emgs, ac.wind);
+
+  // set radar dot
+  currentAC = ac;
+
+  // alert log entries
+  if(wx.danger)         log(`Dangerous weather – wind ${ac.wind} km/h, vis ${ac.vis}m`, 'warn');
+  if(col.status==='RISK') log(`Collision risk – ${col.nearest} at ${col.distance}u`, 'bad');
+  if(ash)               log('Volcanic ash in flight path', 'bad');
+  emgs.forEach(e => log(e + ' emergency detected', 'bad'));
+  log(`Runway ${rwy.num} assigned – ${rwy.reason}`, 'ok');
+
+  // KPIs
+  kpiTotal++;
+  if(!emgs.length && !wx.danger && col.status==='Safe') kpiSafe++;
+  if(emgs.length) kpiEmg++;
+  updateKPIs();
+
+  // show partial results while Ollama thinks
+  renderResults(ac, wx, col, ash, emgs, rwy, null, true);
+
+  // ask Ollama
+  const prompt = buildPrompt(ac, wx, col, ash, emgs, rwy);
+  const aiText = await askOllama(prompt);
+
+  // full render
+  renderResults(ac, wx, col, ash, emgs, rwy, aiText, false);
+
+  // save to session history
+  flightLog.unshift({
+    fnum: ac.fnum, name: ac.name, dest: ac.dest,
+    fuel: ac.fuel, temp: ac.temp, wind: ac.wind, vis: ac.vis,
+    weather: wx.status,
+    collision: col.status,
+    emergency: emgs.length ? emgs.join(', ') : 'None',
+    runway: rwy.num,
+    ts: new Date().toLocaleTimeString('en-GB',{hour12:false}),
+  });
+  renderHistory();
+
+  btn.disabled = false;
+  btn.innerHTML = '⚡  Run ATC Analysis';
+  toast(`${ac.fnum} processed – Runway ${rwy.num}`);
+}
+
+/* ─────────────────────────────────────────────────────
+   RENDER ANALYSIS PANEL
+───────────────────────────────────────────────────── */
+const RWY_WORDS = {1:'ONE', 2:'TWO', 3:'THREE'};
+
+function renderResults(ac, wx, col, ash, emgs, rwy, aiText, loading){
+  const wCls  = wx.danger          ? 's-bad'  : 's-ok';
+  const ccCls = col.status==='RISK'? 's-bad'  : 's-ok';
+  const aCls  = ash                ? 's-bad'  : 's-ok';
+
+  const emgHTML = emgs.length
+    ? emgs.map(e=>`<span class="badge b-bad">${e}</span>`).join('')
+    : `<span class="badge b-ok">NONE</span>`;
+
+  document.getElementById('analysisArea').innerHTML = `
+    <div class="sgrid">
+      <div class="scard ${wCls}">
+        <div class="sc-lbl">Weather</div>
+        <div class="sc-val">${wx.status}</div>
+        <div class="sc-sub">Wind ${ac.wind} km/h · Vis ${ac.vis}m</div>
+      </div>
+      <div class="scard ${ccCls}">
+        <div class="sc-lbl">Collision</div>
+        <div class="sc-val">${col.status}</div>
+        <div class="sc-sub">${col.nearest} @ ${col.distance}u</div>
+      </div>
+      <div class="scard ${aCls}">
+        <div class="sc-lbl">Volcanic Ash</div>
+        <div class="sc-val">${ash ? 'DETECTED' : 'Clear'}</div>
+        <div class="sc-sub">Ash zone proximity check</div>
+      </div>
+      <div class="scard s-sky">
+        <div class="sc-lbl">Radar Position</div>
+        <div class="sc-val" style="font-size:14px;">(${ac.px}, ${ac.py})</div>
+        <div class="sc-sub">Grid coordinates</div>
+      </div>
+    </div>
+
+    <div class="badges" style="margin-bottom:12px;">
+      <span class="badge b-sky">${ac.fnum}</span>
+      <span class="badge b-sky">${ac.name}</span>
+      <span class="badge b-sky">Fuel ${ac.fuel}%</span>
+      <span class="badge b-sky">Temp ${ac.temp}°C</span>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <div style="font-size:9px;color:var(--mid);letter-spacing:.08em;margin-bottom:6px;">EMERGENCIES</div>
+      <div class="badges">${emgHTML}</div>
+    </div>
+
+    <div class="rwy">
+      <div class="rwy-n">${rwy.num}</div>
+      <div>
+        <div class="rwy-lbl">Runway Assigned</div>
+        <div class="rwy-rsn">${rwy.reason}</div>
+      </div>
+    </div>
+
+    <div class="ai-box">
+      <div class="ai-head">🤖 Ollama llama3.2:3b — ATC Decision</div>
+      <div class="ai-body ${loading?'loading':''}">
+        ${loading
+          ? 'Asking AI…'
+          : (aiText
+              ? aiText.replace(/\n/g,'<br>')
+              : '<em style="color:var(--mid)">No response. Is Ollama running?</em>')
+        }
+      </div>
+    </div>
+
+    <div style="font-size:10px;color:var(--lo);text-align:right;font-family:var(--data);">
+      ${new Date().toLocaleString()}
+    </div>`;
+}
+
+/* ─────────────────────────────────────────────────────
+   RENDER HISTORY TABLE
+───────────────────────────────────────────────────── */
+function renderHistory(){
+  if(!flightLog.length){
+    document.getElementById('historyArea').innerHTML =
+      '<div class="mute">No flights processed yet.</div>';
+    return;
+  }
+  const rows = flightLog.map(r=>`
+    <tr>
+      <td style="color:var(--sky)">${r.fnum}</td>
+      <td>${r.name}</td>
+      <td>${r.dest}</td>
+      <td style="color:${r.weather==='Dangerous'?'var(--danger)':'var(--ok)'}">${r.weather}</td>
+      <td style="color:${r.collision==='RISK'?'var(--danger)':'var(--ok)'}">${r.collision}</td>
+      <td style="color:${r.emergency!=='None'?'var(--warn)':'var(--lo)'}">${r.emergency}</td>
+      <td style="color:var(--amber)">RWY ${r.runway}</td>
+      <td style="color:var(--lo)">${r.ts}</td>
+    </tr>`).join('');
+  document.getElementById('historyArea').innerHTML = `
+    <table class="htab">
+      <thead><tr>
+        <th>Flight</th><th>Aircraft</th><th>Dest</th>
+        <th>Weather</th><th>Collision</th>
+        <th>Emergency</th><th>Runway</th><th>Time</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function clearHistory(){
+  flightLog = []; kpiTotal=0; kpiSafe=0; kpiEmg=0;
+  updateKPIs(); renderHistory();
+  document.getElementById('analysisArea').innerHTML =
+    '<div class="mute">Run an analysis to see results here.</div>';
+  log('History cleared','sky');
+  toast('History cleared');
+}
+
+/* ─────────────────────────────────────────────────────
+   RADAR CANVAS
+───────────────────────────────────────────────────── */
+const cv  = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+function resize(){
+  const box  = document.getElementById('radarBox');
+  cv.width   = box.clientWidth;
+  cv.height  = box.clientHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// jitter for realism
+let jitter = {};
+Object.keys(RADAR_TRAFFIC).forEach(k=>{
+  jitter[k]={dx:0,dy:0,tx:0,ty:0,t:0};
+});
+function updateJitter(){
+  Object.keys(RADAR_TRAFFIC).forEach(k=>{
+    jitter[k].t++;
+    if(jitter[k].t % 80 === 0){
+      jitter[k].tx = (Math.random()-0.5)*8;
+      jitter[k].ty = (Math.random()-0.5)*8;
+    }
+    jitter[k].dx += (jitter[k].tx - jitter[k].dx) * 0.05;
+    jitter[k].dy += (jitter[k].ty - jitter[k].dy) * 0.05;
+  });
+}
+
+function toXY(rx, ry, cx, cy, R){
+  return [
+    cx + (rx - 225)/225 * R,
+    cy + (ry - 225)/225 * R,
+  ];
+}
+
+function drawRadar(){
+  updateJitter();
+  const W = cv.width, H = cv.height;
+  const cx = W/2, cy = H/2;
+  const R  = Math.min(W,H)/2 - 26;
+
+  ctx.clearRect(0,0,W,H);
+
+  // rings
+  [1,.75,.5,.25].forEach(f=>{
+    ctx.beginPath();
+    ctx.arc(cx,cy,R*f,0,Math.PI*2);
+    ctx.strokeStyle = f===1 ? 'rgba(0,140,30,.65)' : 'rgba(0,100,20,.28)';
+    ctx.lineWidth   = f===1 ? 1.2 : .5;
+    ctx.stroke();
+  });
+
+  // crosshairs
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,100,20,.22)';
+  ctx.lineWidth   = .5;
+  ctx.setLineDash([3,8]);
+  [[cx,cy-R,cx,cy+R],[cx-R,cy,cx+R,cy]].forEach(([x1,y1,x2,y2])=>{
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // range labels
+  ctx.fillStyle = 'rgba(0,180,40,.3)';
+  ctx.font      = '8px monospace';
+  ['50','100','150','200'].forEach((l,i)=>{
+    ctx.fillText(l, cx + R*(i+1)/4 + 3, cy - 4);
+  });
+
+  // sweep
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(sweepA);
+  const grd = ctx.createLinearGradient(0,-R, R*.45,0);
+  grd.addColorStop(0,  'rgba(0,212,138,0)');
+  grd.addColorStop(.6, 'rgba(0,212,138,.05)');
+  grd.addColorStop(1,  'rgba(0,212,138,.2)');
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,R,-Math.PI/8,0);
+  ctx.fillStyle = grd; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-R);
+  ctx.strokeStyle = 'rgba(0,212,138,.8)';
+  ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.restore();
+  sweepA += 0.016;
+
+  // ash zones
+  ASH_ZONES.forEach(z=>{
+    const [ax,ay] = toXY(z.cx, z.cy, cx,cy,R);
+    const ar      = z.r/225*R;
+    ctx.beginPath(); ctx.arc(ax,ay,ar,0,Math.PI*2);
+    ctx.fillStyle   = 'rgba(232,59,90,.1)';  ctx.fill();
+    ctx.strokeStyle = 'rgba(232,59,90,.5)';  ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle   = 'rgba(232,59,90,.75)'; ctx.font='9px monospace';
+    ctx.fillText('ASH', ax-10, ay-ar-5);
+  });
+
+  // traffic blips
+  Object.entries(RADAR_TRAFFIC).forEach(([name,pos])=>{
+    const j  = jitter[name];
+    const [bx,by] = toXY(pos.x+j.dx, pos.y+j.dy, cx,cy,R);
+    ctx.beginPath(); ctx.arc(bx,by,5,0,Math.PI*2);
+    ctx.fillStyle   = '#00d48a';
+    ctx.shadowColor = '#00d48a'; ctx.shadowBlur=8;
+    ctx.fill(); ctx.shadowBlur=0;
+    ctx.fillStyle = 'rgba(0,212,138,.85)';
+    ctx.font      = 'bold 9px Share Tech Mono, monospace';
+    ctx.fillText(name, bx+8, by-4);
+  });
+
+  // your aircraft
+  if(currentAC){
+    const [ax,ay] = toXY(currentAC.px, currentAC.py, cx,cy,R);
+    // safety radius
+    const sr = 50/225*R;
+    ctx.beginPath(); ctx.arc(ax,ay,sr,0,Math.PI*2);
+    ctx.strokeStyle = 'rgba(58,155,220,.25)';
+    ctx.lineWidth=1; ctx.setLineDash([4,5]); ctx.stroke(); ctx.setLineDash([]);
+    // dot
+    ctx.beginPath(); ctx.arc(ax,ay,7,0,Math.PI*2);
+    ctx.fillStyle   = '#3a9bdc';
+    ctx.shadowColor = '#3a9bdc'; ctx.shadowBlur=13;
+    ctx.fill(); ctx.shadowBlur=0;
+    // label
+    ctx.fillStyle = '#3a9bdc';
+    ctx.font      = 'bold 10px Share Tech Mono, monospace';
+    ctx.fillText(currentAC.fnum, ax+10, ay-5);
+  }
+
+  requestAnimationFrame(drawRadar);
+}
+drawRadar();
+
+/* ─────────────────────────────────────────────────────
+   VOICE ANNOUNCEMENTS  (Web Speech API)
+───────────────────────────────────────────────────── */
+function speak(msg){
+  if(!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(msg);
+  u.rate   = 0.92;
+  u.pitch  = 0.9;
+  u.volume = 0.85;
+  window.speechSynthesis.speak(u);
+}
+
+// Override processAircraft to add voice
+const _baseProcess = processAircraft;
+// (voice is embedded in main flow via the overridden render — done inline below)
+</script>
+
+<!-- voice overlay patch: add speech calls into the flow -->
+<script>
+/* Patch: wrap processAircraft to add voice after Ollama responds */
+const _origProcess = processAircraft;
+window.processAircraft = async function(){
+  // We intercept by overriding renderResults locally for this call
+  const origRender = window.renderResults;
+  let voiceDone = false;
+
+  window.renderResults = function(ac, wx, col, ash, emgs, rwy, aiText, loading){
+    origRender(ac, wx, col, ash, emgs, rwy, aiText, loading);
+    if(!loading && !voiceDone){
+      voiceDone = true;
+      // build voice script
+      let lines = [`Flight ${ac.fnum} to ${ac.dest}. `];
+      if(wx.danger)           lines.push(`Warning. Dangerous weather. Wind ${ac.wind} kilometres per hour. Visibility ${ac.vis} metres. `);
+      else                    lines.push(`Weather is safe. `);
+      if(col.status==='RISK') lines.push(`Collision risk detected. ${col.nearest} is only ${col.distance} units away. `);
+      else                    lines.push(`Safe aircraft separation confirmed. `);
+      if(ash)                 lines.push(`Volcanic ash emergency detected in flight path. `);
+      emgs.forEach(e=>{
+        if(e==='LOW FUEL')        lines.push('Low fuel emergency detected. ');
+        if(e==='ENGINE OVERHEAT') lines.push('Engine overheating detected. ');
+      });
+      const rname = ['','Runway One','Runway Two','Runway Three'][rwy.num];
+      lines.push(`${rname} allocated. ${rwy.reason}. `);
+      speak(lines.join(''));
+    }
+  };
+
+  await _origProcess();
+  window.renderResults = origRender; // restore
+};
+</script>
+
+</body>
+</html>

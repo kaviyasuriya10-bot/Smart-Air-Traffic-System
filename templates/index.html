@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATC-AI · Tower Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="tower-bar">
+  <div class="tower-bar__id">
+    <span class="tower-bar__glyph">◎</span>
+    <div>
+      <div class="tower-bar__title">ATC&#8209;AI TOWER CONSOLE</div>
+      <div class="tower-bar__sub">Automated approach &amp; runway advisory</div>
+    </div>
+  </div>
+  <div class="tower-bar__status">
+    <div class="status-pill" id="dbStatusPill">
+      <span class="status-pill__dot" id="dbStatusDot"></span>
+      <span id="dbStatusText">checking database…</span>
+    </div>
+    <div class="tower-bar__clock" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<main class="console">
+
+  <section class="panel panel--scope">
+    <div class="panel__head">
+      <h2>Radar Scope</h2>
+      <span class="panel__meta">4 tracked contacts · sweep 4s</span>
+    </div>
+    <div class="scope-wrap">
+      <canvas id="radarCanvas" width="520" height="520"></canvas>
+    </div>
+    <ul class="scope-legend">
+      <li><span class="swatch swatch--contact"></span>known traffic</li>
+      <li><span class="swatch swatch--subject"></span>subject aircraft</li>
+      <li><span class="swatch swatch--ash"></span>ash zone</li>
+    </ul>
+  </section>
+
+  <section class="panel panel--intake">
+    <div class="panel__head">
+      <h2>Aircraft Intake</h2>
+      <span class="panel__meta">complete all fields to run advisory</span>
+    </div>
+
+    <form id="intakeForm" class="intake-form">
+      <label class="field">
+        <span>Aircraft type</span>
+        <input type="text" name="aircraft_name" placeholder="Boeing 737" required>
+      </label>
+      <label class="field">
+        <span>Flight number</span>
+        <input type="text" name="flight_number" placeholder="AI203" required>
+      </label>
+      <label class="field">
+        <span>Destination</span>
+        <input type="text" name="destination" placeholder="Mumbai" required>
+      </label>
+
+      <div class="field-row">
+        <label class="field">
+          <span>Fuel level <em>%</em></span>
+          <input type="number" name="fuel_level" min="0" max="100" step="0.1" placeholder="42" required>
+        </label>
+        <label class="field">
+          <span>Engine temp <em>°C</em></span>
+          <input type="number" name="engine_temp" step="0.1" placeholder="78" required>
+        </label>
+      </div>
+
+      <div class="field-row">
+        <label class="field">
+          <span>Wind speed <em>km/h</em></span>
+          <input type="number" name="wind_speed" min="0" step="0.1" placeholder="18" required>
+        </label>
+        <label class="field">
+          <span>Visibility <em>m</em></span>
+          <input type="number" name="visibility" min="0" step="1" placeholder="4000" required>
+        </label>
+      </div>
+
+      <button type="submit" class="btn-clear" id="submitBtn">Run advisory</button>
+      <p class="form-error" id="formError"></p>
+    </form>
+  </section>
+
+  <section class="panel panel--report" id="reportPanel" hidden>
+    <div class="panel__head">
+      <h2>Advisory Report</h2>
+      <span class="panel__meta" id="reportTimestamp"></span>
+    </div>
+    <div class="ticket" id="ticketBody"></div>
+  </section>
+
+  <section class="panel panel--log">
+    <div class="panel__head">
+      <h2>Flight Log</h2>
+      <button class="btn-ghost" id="refreshLogBtn">Refresh</button>
+    </div>
+    <div class="log-table-wrap">
+      <table class="log-table">
+        <thead>
+          <tr>
+            <th>Flight</th><th>Aircraft</th><th>Destination</th>
+            <th>Weather</th><th>Collision</th><th>Emergency</th>
+            <th>Runway</th><th>Logged</th>
+          </tr>
+        </thead>
+        <tbody id="logTableBody">
+          <tr><td colspan="8" class="log-empty">No flights processed yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
